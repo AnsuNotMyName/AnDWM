@@ -3,7 +3,6 @@ set -e
 
 echo "==> Installing fonts..."
 sudo pacman -S --noconfirm --needed \
-    ttf-iosevka \
     noto-fonts \
     noto-fonts-extra \
     noto-fonts-cjk \
@@ -11,36 +10,51 @@ sudo pacman -S --noconfirm --needed \
     ttf-nerd-fonts-symbols-common \
     ttf-jetbrains-mono-nerd
 
-yay -S --noconfirm ttf-noto-nerd
+yay -S --noconfirm --needed ttf-noto-nerd
+yay -S --noconfirm --needed ttf-iosevka
 
 echo "==> Installing required packages..."
 sudo pacman -S --needed --noconfirm \
-    imlib2 dash kitty starship zsh exa rofi flameshot nemo greenclip
+    imlib2 dash kitty starship zsh exa \
+    rofi flameshot nemo zig libc++ pam libxcb xcb-util
 
-echo "==> Installing LY display manager..."
-yay -S --noconfirm --needed ly
+echo "==> Installing cursor..."
+yay -S --noconfirm --needed bibata-cursor-theme-bin
+
+echo "==> Installing greenclip..."
+yay -S --noconfirm --needed rofi-greenclip
+ 
 
 # -------------------------
 # ASK BEFORE ENABLING LY
 # -------------------------
-read -rp "Enable LY and disable other display managers? (y/n): " ans
+read -rp "Do you want to install Ly and disable other display manager? (y/n): " ans
 if [[ "$ans" == "y" || "$ans" == "Y" ]]; then
+    cd "$HOME"/.config/AnDWM/
+    sudo git clone https://github.com/fairyglade/ly.git
+    cd ly
+    sudo zig build installexe -Dinit_system=systemd
+    cd ..
+
     echo "=> Disabling other display managers..."
     sudo systemctl disable sddm.service lightdm.service gdm.service lxdm.service 2>/dev/null || true
 
     echo "=> Enabling LY..."
     sudo systemctl enable ly.service
 else
-    echo "=> Skipping LY enable/disable step."
+    echo "=> Skipping LY install step."
 fi
 
 echo "==> Copying dotfiles..."
-sudo cp -r .config "$HOME"/.config
-sudo cp -r .icons "$HOME"/.icons
-sudo cp -r usr/ /usr/
+sudo cp -r AnDWM "$HOME"/.config/
+sudo cp -r .config "$HOME"
+sudo cp -r .icons "$HOME"
+sudo cp usr/sbin/* /usr/sbin/
+sudo cp -r usr/share/* /usr/share
+sudo cp .Xresources "$HOME"
 
 echo "==> Building and installing AnDWM..."
-cd "$HOME/.config/AnDWM"
+cd "$HOME/.config/AnDWM/AnDWM/"
 sudo make install
 
 echo "==> Creating XSession entry..."
@@ -56,3 +70,4 @@ EOF
 
 echo "==> Installation complete!"
 echo "Reboot and select 'AnDWM' on login."
+echo "Thank you for chadwm"
